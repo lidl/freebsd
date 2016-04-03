@@ -30,6 +30,11 @@ SRCS+=		genget.c getent.c misc.c
 CFLAGS+=	-DHAS_CGETENT
 .endif
 
+.if ${MK_BLACKLIST_SUPPORT} != "no"
+CFLAGS+=	-DUSE_BLACKLIST
+LIBADD+=	blacklist util
+.endif
+
 .if ${MK_OPENSSL} != "no"
 SRCS+=		authenc.c
 CFLAGS+=	-DENCRYPTION -DAUTHENTICATION -DIPSEC

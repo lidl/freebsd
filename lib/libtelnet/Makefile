@@ -16,6 +16,10 @@ CFLAGS+=	-I${TELNETDIR}
 
 WARNS?=		2
 
+.if ${MK_BLACKLIST_SUPPORT} != "no"
+CFLAGS+=	-DUSE_BLACKLIST
+.endif
+
 .if ${MK_OPENSSL} != "no"
 SRCS+=		encrypt.c auth.c enc_des.c sra.c pk.c
 CFLAGS+=	-DENCRYPTION -DAUTHENTICATION -DSRA

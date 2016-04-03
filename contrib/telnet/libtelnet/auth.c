@@ -76,6 +76,9 @@ __FBSDID("$FreeBSD$");
 #include "auth.h"
 #include "misc-proto.h"
 #include "auth-proto.h"
+#ifdef USE_BLACKLIST
+#include "blacklist.h"
+#endif
 
 #define	typemask(x)	((x) > 0 ? 1 << ((x)-1) : 0)
 
@@ -577,11 +580,19 @@ auth_wait(char *name)
 	/*
 	 * Now check to see if the user is valid or not
 	 */
-	if (!authenticated || authenticated == &NoAuth)
+	if (!authenticated || authenticated == &NoAuth) {
+#ifdef USE_BLACKLIST
+		blacklist(1, STDIN_FILENO, "authorization failure");
+#endif
 		return(AUTH_REJECT);
+	}
 
-	if (validuser == AUTH_VALID)
+	if (validuser == AUTH_VALID) {
+#ifdef USE_BLACKLIST
+		blacklist(0, STDIN_FILENO, "authorization success");
+#endif
 		validuser = AUTH_USER;
+	}
 
 	if (authenticated->status)
 		validuser = (*authenticated->status)(authenticated,

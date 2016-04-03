@@ -31,6 +31,12 @@ LIBTELNET=	${.OBJDIR}/../../lib/libtelnet/libtelnet.a
 
 LIBADD=		telnet util ncursesw
 
+.if ${MK_BLACKLIST_SUPPORT} != "no"
+CFLAGS+= -DUSE_BLACKLIST -I${SRCTOP}/contrib/blacklist/include
+LIBADD+= blacklist
+LDFLAGS+=-L${LIBBLACKLISTDIR}
+.endif
+
 .if ${MK_OPENSSL} != "no"
 SRCS+=		authenc.c
 CFLAGS+=	-DAUTHENTICATION -DENCRYPTION

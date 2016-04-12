@@ -37,7 +37,7 @@ NIS=	-DNIS
 # Map extensions
 MAPS=	-DMAP_REGEX -DDNSMAP
 
-CFLAGS+= -I${SMDIR} -I${SENDMAIL_DIR}/include -I.
+CFLAGS+= -I${SMDIR} -I${SENDMAIL_DIR}/include -I. -Wno-format-security
 CFLAGS+= ${DBMDEF} ${NIS} -DTCPWRAPPERS ${MAPS}
 
 .if ${MK_INET6_SUPPORT} != "no"
@@ -50,6 +50,13 @@ LIBADD=	util wrap sm smutil
 
 SRCS+=	sm_os.h
 CLEANFILES+=sm_os.h
+
+.if ${MK_BLACKLIST_SUPPORT} != "no"
+CFLAGS+= -DUSE_BLACKLIST -I${SRCTOP}/contrib/blacklist/include
+SRCS+= blacklist.c
+LIBADD+= blacklist
+LDFLAGS+=-L${LIBBLACKLISTDIR}
+.endif
 
 .if ${MK_OPENSSL} != "no"
 # STARTTLS support

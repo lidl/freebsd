@@ -33,6 +33,10 @@ static int saslmechs __P((sasl_conn_t *, char **));
 # include <openssl/err.h>
 # include <sysexits.h>
 
+#ifdef USE_BLACKLIST
+#include "blacklist_client.h"
+#endif
+
 static SSL_CTX	*srv_ctx = NULL;	/* TLS server context */
 static SSL	*srv_ssl = NULL;	/* per connection context */
 
@@ -831,7 +835,9 @@ smtp(nullserver, d_flags, e)
 #if _FFR_BADRCPT_SHUTDOWN
 	int n_badrcpts_adj;
 #endif /* _FFR_BADRCPT_SHUTDOWN */
-
+#ifdef USE_BLACKLIST
+	int fd;
+#endif
 	SevenBitInput_Saved = SevenBitInput;
 	smtp.sm_nrcpts = 0;
 #if MILTER
@@ -1328,6 +1334,9 @@ smtp(nullserver, d_flags, e)
 					  (int) tp.tv_sec +
 						(tp.tv_usec >= 500000 ? 1 : 0)
 					 );
+#ifdef USE_BLACKLIST
+				blacklist_notify(1, fd, "pre-greeting traffic");
+#endif
 			}
 		}
 	}
@@ -1723,6 +1732,10 @@ smtp(nullserver, d_flags, e)
 			{
 				/* not SASL_OK or SASL_CONT */
 				message("535 5.7.0 authentication failed");
+#ifdef USE_BLACKLIST
+				int fd = sm_io_getinfo(InChannel, SM_IO_WHAT_FD, NULL);
+				blacklist_notify(1, fd, "AUTH FAIL");
+#endif
 				if (LogLevel > 9)
 					sm_syslog(LOG_WARNING, e->e_id,
 						  "AUTH failure (%s): %s (%d) %s, relay=%.100s",
@@ -3524,6 +3537,10 @@ doquit:
 			if (++n_badcmds > MAXBADCOMMANDS)
 			{
   stopattack:
+#ifdef USE_BLACKLIST
+				fd = sm_io_getinfo(InChannel, SM_IO_WHAT_FD, NULL);
+				blacklist_notify(1, fd, "too many bad commands");
+#endif
 				message("421 4.7.0 %s Too many bad commands; closing connection",
 					MyHostName);
 

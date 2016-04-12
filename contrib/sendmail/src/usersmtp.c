@@ -17,6 +17,9 @@ SM_RCSID("@(#)$Id: usersmtp.c,v 8.488 2013-11-22 20:51:57 ca Exp $")
 
 #include <sysexits.h>
 
+#ifdef USE_BLACKLIST
+#include "blacklist_client.h"
+#endif
 
 static void	esmtp_check __P((char *, bool, MAILER *, MCI *, ENVELOPE *));
 static void	helo_options __P((char *, bool, MAILER *, MCI *, ENVELOPE *));
@@ -1825,6 +1828,10 @@ attemptauth(m, mci, e, sai)
 
 		if (saslresult != SASL_OK && saslresult != SASL_CONTINUE)
 		{
+#ifdef USE_BLACKLIST
+			int fd = sm_io_getinfo(mci->mci_in, SM_IO_WHAT_FD, NULL);
+			blacklist_notify(1, fd, "AUTH FAIL");
+#endif
 			if (tTd(95, 5))
 				sm_dprintf("AUTH FAIL=%s (%d)\n",
 					sasl_errstring(saslresult, NULL, NULL),
@@ -1970,9 +1977,13 @@ smtpauth(m, mci, e)
 	do
 	{
 		result = attemptauth(m, mci, e, &(mci->mci_sai));
-		if (result == EX_OK)
+		if (result == EX_OK) {
+#ifdef USE_BLACKLIST
+			int fd = sm_io_getinfo(mci->mci_in, SM_IO_WHAT_FD, NULL);
+			blacklist_notify(0, fd, "AUTH OK");
+#endif
 			mci->mci_sasl_auth = true;
-		else if (result == EX_TEMPFAIL || result == EX_NOPERM)
+		} else if (result == EX_TEMPFAIL || result == EX_NOPERM)
 		{
 			mci->mci_saslcap = removemech((mci->mci_sai)[SASL_MECH],
 						      mci->mci_saslcap,

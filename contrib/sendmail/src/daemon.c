@@ -62,6 +62,10 @@ SM_RCSID("@(#)$Id: daemon.c,v 8.698 2013-11-22 20:51:55 ca Exp $")
 #define DAEMON_C 1
 #include <daemon.h>
 
+#ifdef USE_BLACKLIST
+#include "blacklist_client.h"
+#endif
+
 static void		connecttimeout __P((int));
 static int		opendaemonsocket __P((DAEMON_T *, bool));
 static unsigned short	setupdaemon __P((SOCKADDR *));
@@ -753,6 +757,10 @@ getrequests(e)
 				sm_setproctitle(true, e, "startup with %s",
 						anynet_ntoa(&RealHostAddr));
 			}
+
+#ifdef USE_BLACKLIST
+			blacklist_init();
+#endif
 
 			if (pipefd[0] != -1)
 			{
